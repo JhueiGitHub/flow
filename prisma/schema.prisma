@@ -1,0 +1,70 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  name      String
+  imageUrl  String   @db.Text
+  email     String   @db.Text
+
+  notes     Note[]
+  designSystems DesignSystem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.Text
+  isFolder  Boolean  @default(false)
+  parentId  String?
+
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([parentId])
+}
+
+model DesignSystem {
+  id               String   @id @default(uuid())
+  name             String
+  primaryColor     String
+  secondaryColor   String
+  backgroundColor  String
+  primaryFont      String
+  secondaryFont    String
+
+  profileId        String
+  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([profileId])
+}
+
+model FontFile {
+  id        String   @id @default(uuid())
+  name      String
+  fileName  String
+  fileUrl   String   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
