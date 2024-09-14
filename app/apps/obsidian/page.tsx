@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./components/sidebar";
 import Editor from "./components/editor";
 import { Note, DesignSystem } from "@prisma/client";
-import "./styles/obsidian.css"; // Preserve original import
+import styles from "./styles/obsidian.module.css";
 
 type NoteWithChildren = Note & { children?: NoteWithChildren[] };
 
@@ -14,7 +14,6 @@ const LAST_EDITED_NOTE_KEY = "lastEditedNoteId";
 const ACTIVE_DESIGN_SYSTEM_KEY = "activeDesignSystemId";
 
 export default function ObsidianPage() {
-  // Preserve all existing state and effects
   const [notes, setNotes] = useState<NoteWithChildren[]>([]);
   const [selectedNote, setSelectedNote] = useState<NoteWithChildren | null>(
     null
@@ -57,34 +56,11 @@ export default function ObsidianPage() {
       if (!response.ok) {
         throw new Error("Failed to fetch notes");
       }
-      const data: Note[] = await response.json();
-      const treeStructure = createTreeStructure(data);
-      setNotes(treeStructure);
+      const data = await response.json();
+      setNotes(data);
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
-  };
-
-  const createTreeStructure = (flatNotes: Note[]): NoteWithChildren[] => {
-    const noteMap: { [key: string]: NoteWithChildren } = {};
-    const rootNotes: NoteWithChildren[] = [];
-
-    flatNotes.forEach((note) => {
-      noteMap[note.id] = { ...note, children: [] };
-    });
-
-    flatNotes.forEach((note) => {
-      if (note.parentId) {
-        const parent = noteMap[note.parentId];
-        if (parent) {
-          parent.children?.push(noteMap[note.id]);
-        }
-      } else {
-        rootNotes.push(noteMap[note.id]);
-      }
-    });
-
-    return rootNotes;
   };
 
   const fetchDesignSystems = async () => {
@@ -114,17 +90,13 @@ export default function ObsidianPage() {
     return null;
   };
 
-  const handleSelectNote = (note: NoteWithChildren) => {
-    setSelectedNote(note);
-    localStorage.setItem(LAST_EDITED_NOTE_KEY, note.id);
-  };
-
   const handleUpdateNotes = () => {
     fetchNotes();
   };
 
-  const handleUpdateNote = (updatedNote: NoteWithChildren) => {
-    setSelectedNote(updatedNote);
+  const handleUpdateNote = (id: string, title: string, content: string) => {
+    const updatedNote = { ...selectedNote!, id, title, content };
+    setSelectedNote(updatedNote as NoteWithChildren);
     handleUpdateNotes();
   };
 
@@ -154,6 +126,10 @@ export default function ObsidianPage() {
       "--background-color",
       designSystem.backgroundColor
     );
+    document.documentElement.style.setProperty(
+      "--editor-background",
+      designSystem.editorBackground
+    );
 
     const style = document.createElement("style");
     style.textContent = `
@@ -182,6 +158,7 @@ export default function ObsidianPage() {
     document.documentElement.style.removeProperty("--primary-color");
     document.documentElement.style.removeProperty("--secondary-color");
     document.documentElement.style.removeProperty("--background-color");
+    document.documentElement.style.removeProperty("--editor-background");
     document.documentElement.style.removeProperty("--primary-font");
     document.documentElement.style.removeProperty("--secondary-font");
 
@@ -194,24 +171,24 @@ export default function ObsidianPage() {
   };
 
   return (
-    <div className="obsidian-app">
+    <div className={styles.container}>
       <Sidebar
         notes={notes}
-        onSelectNote={handleSelectNote}
+        onSelectNote={setSelectedNote}
         onUpdateNotes={handleUpdateNotes}
       />
-      <div className="editor-container">
+      <div className={styles.mainContent}>
         {selectedNote ? (
           <Editor note={selectedNote} onUpdateNote={handleUpdateNote} />
         ) : (
-          <div className="empty-editor">Select a note to edit</div>
+          <div className={styles.emptyEditor}>Select a note to edit</div>
         )}
       </div>
-      <div className="design-system-selector">
+      <div className={styles.designSystemSelector}>
         <select
           value={activeDesignSystem?.id || ""}
           onChange={(e) => handleSelectDesignSystem(e.target.value)}
-          className="design-system-select"
+          className={styles.designSystemSelect}
         >
           <option value="">Default Design</option>
           {designSystems.map((ds) => (

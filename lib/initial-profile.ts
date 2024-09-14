@@ -16,18 +16,6 @@ export const initialProfile = async () => {
   });
 
   if (profile) {
-    // Check if the profile already has a design system
-    const existingDesignSystem = await db.designSystem.findFirst({
-      where: {
-        profileId: profile.id,
-      },
-    });
-
-    if (!existingDesignSystem) {
-      // Create initial design system if it doesn't exist
-      await createInitialDesignSystem(profile.id);
-    }
-
     return profile;
   }
 
@@ -40,7 +28,7 @@ export const initialProfile = async () => {
     },
   });
 
-  // Create initial design system for the new profile
+  // Create initial design system
   await createInitialDesignSystem(newProfile.id);
 
   return newProfile;
@@ -52,7 +40,8 @@ async function createInitialDesignSystem(profileId: string) {
       name: "Default Design System",
       primaryColor: "#000000",
       secondaryColor: "#ffffff",
-      backgroundColor: "#f0f0f0",
+      backgroundColor: "rgba(47, 47, 47, 0.5)", // Semi-transparent dark background
+      editorBackground: "rgba(0, 0, 0, 0.5)", // Semi-transparent black for editor
       primaryFont: "Arial",
       secondaryFont: "Helvetica",
       profileId: profileId,

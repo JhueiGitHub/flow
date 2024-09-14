@@ -1,4 +1,4 @@
-// /root/app/flow/page.tsx
+// /root/app/apps/flow/page.tsx
 
 "use client";
 
@@ -17,38 +17,30 @@ export default function FlowPage() {
   const fetchDesignSystems = async () => {
     try {
       const response = await fetch("/api/design-systems");
-      if (!response.ok) {
-        throw new Error("Failed to fetch design systems");
+      if (response.ok) {
+        const data = await response.json();
+        setDesignSystems(data);
       }
-      const data = await response.json();
-      console.log("Fetched design systems:", data);
-      setDesignSystems(data);
     } catch (error) {
       console.error("Error fetching design systems:", error);
     }
   };
 
   const handleCreate = async (
-    newSystem: Omit<DesignSystem, "id" | "createdAt" | "updatedAt">
+    newSystem: Omit<
+      DesignSystem,
+      "id" | "createdAt" | "updatedAt" | "profileId"
+    >
   ) => {
     try {
-      console.log("Creating new design system:", newSystem);
       const response = await fetch("/api/design-systems", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSystem),
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          `Failed to create design system: ${
-            errorData.error || response.statusText
-          }`
-        );
+      if (response.ok) {
+        await fetchDesignSystems();
       }
-      const createdSystem = await response.json();
-      console.log("Design system created:", createdSystem);
-      await fetchDesignSystems();
     } catch (error) {
       console.error("Error creating design system:", error);
     }
@@ -59,10 +51,9 @@ export default function FlowPage() {
       const response = await fetch(`/api/design-systems/${id}`, {
         method: "DELETE",
       });
-      if (!response.ok) {
-        throw new Error("Failed to delete design system");
+      if (response.ok) {
+        await fetchDesignSystems();
       }
-      await fetchDesignSystems();
     } catch (error) {
       console.error("Error deleting design system:", error);
     }

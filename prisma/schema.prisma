@@ -11,13 +11,13 @@ datasource db {
 }
 
 model Profile {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  name      String
-  imageUrl  String   @db.Text
-  email     String   @db.Text
+  id       String @id @default(uuid())
+  userId   String @unique
+  name     String
+  imageUrl String @db.Text
+  email    String @db.Text
 
-  notes     Note[]
+  notes         Note[]
   designSystems DesignSystem[]
 
   createdAt DateTime @default(now())
@@ -30,10 +30,10 @@ model Note {
   content   String   @db.Text
   isFolder  Boolean  @default(false)
   parentId  String?
-
+  parent    Note?    @relation("NoteToNote", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  children  Note[]   @relation("NoteToNote")
   profileId String
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -47,12 +47,11 @@ model DesignSystem {
   primaryColor     String
   secondaryColor   String
   backgroundColor  String
+  editorBackground String
   primaryFont      String
   secondaryFont    String
-
   profileId        String
   profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -60,10 +59,10 @@ model DesignSystem {
 }
 
 model FontFile {
-  id        String   @id @default(uuid())
-  name      String
-  fileName  String
-  fileUrl   String   @db.Text
+  id       String @id @default(uuid())
+  name     String
+  fileName String
+  fileUrl  String @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
