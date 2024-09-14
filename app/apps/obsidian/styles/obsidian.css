@@ -2,7 +2,7 @@
 
 :root {
   --bg-underlying: url("https://github.com/JhueiGitHub/obs/blob/main/obsBGTeall.png?raw=true");
-  --bg-overlay: rgba(0, 0, 0, 0.65);
+  --bg-overlay: rgba(236, 17, 17, 0.923);
   --text-normal: #939fad;
   --text-accent: #367867;
   --text-accent-hover: #83909f;
