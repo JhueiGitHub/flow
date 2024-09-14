@@ -37,7 +37,7 @@ export default function Editor({ note, onUpdateNote }: EditorProps) {
         onChange={(e) => setContent(e.target.value)}
         className="w-full h-full p-2 border rounded"
       />
-      {isSaving && <div className="text-sm text-gray-500">Saving...</div>}
+      {isSaving && <div className="saving-indicator">Saving...</div>}
     </div>
   );
 }

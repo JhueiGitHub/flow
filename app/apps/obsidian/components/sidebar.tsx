@@ -86,6 +86,7 @@ export default function Sidebar({
       <div
         key={note.id}
         style={{ marginLeft: `${depth * 20}px` }}
+        className={note.isFolder ? "folder-item" : "note-item"}
         onContextMenu={(e) => handleContextMenu(e, note.id)}
         draggable
         onDragStart={(e) => handleDragStart(e, note.id)}
@@ -94,10 +95,7 @@ export default function Sidebar({
       >
         {note.isFolder ? (
           <div>
-            <span
-              onClick={() => toggleFolder(note.id)}
-              className="cursor-pointer"
-            >
+            <span onClick={() => toggleFolder(note.id)}>
               {expandedFolders.has(note.id) ? "📂" : "📁"} {note.title}
             </span>
             {expandedFolders.has(note.id) && note.children && (
@@ -105,9 +103,7 @@ export default function Sidebar({
             )}
           </div>
         ) : (
-          <div onClick={() => onSelectNote(note)} className="cursor-pointer">
-            📄 {note.title}
-          </div>
+          <div onClick={() => onSelectNote(note)}>📄 {note.title}</div>
         )}
       </div>
     ));
@@ -141,7 +137,7 @@ export default function Sidebar({
 
   return (
     <div
-      className="w-64 bg-gray-100 p-4 h-full overflow-y-auto relative"
+      className="sidebar"
       onContextMenu={(e) => handleContextMenu(e, null)}
       onClick={() =>
         setContextMenu({ visible: false, x: 0, y: 0, parentId: null })

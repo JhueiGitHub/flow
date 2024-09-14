@@ -6,6 +6,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./components/sidebar";
 import Editor from "./components/editor";
 import { Note, DesignSystem } from "@prisma/client";
+import "./styles/obsidian.css"; // Preserve original import
 
 type NoteWithChildren = Note & { children?: NoteWithChildren[] };
 
@@ -13,6 +14,7 @@ const LAST_EDITED_NOTE_KEY = "lastEditedNoteId";
 const ACTIVE_DESIGN_SYSTEM_KEY = "activeDesignSystemId";
 
 export default function ObsidianPage() {
+  // Preserve all existing state and effects
   const [notes, setNotes] = useState<NoteWithChildren[]>([]);
   const [selectedNote, setSelectedNote] = useState<NoteWithChildren | null>(
     null
@@ -192,26 +194,24 @@ export default function ObsidianPage() {
   };
 
   return (
-    <div className="flex h-full bg-white">
+    <div className="obsidian-app">
       <Sidebar
         notes={notes}
         onSelectNote={handleSelectNote}
         onUpdateNotes={handleUpdateNotes}
       />
-      <div className="flex-1">
+      <div className="editor-container">
         {selectedNote ? (
           <Editor note={selectedNote} onUpdateNote={handleUpdateNote} />
         ) : (
-          <div className="h-full flex items-center justify-center text-gray-500">
-            Select a note to edit
-          </div>
+          <div className="empty-editor">Select a note to edit</div>
         )}
       </div>
-      <div className="fixed top-4 right-4">
+      <div className="design-system-selector">
         <select
           value={activeDesignSystem?.id || ""}
           onChange={(e) => handleSelectDesignSystem(e.target.value)}
-          className="p-2 border rounded"
+          className="design-system-select"
         >
           <option value="">Default Design</option>
           {designSystems.map((ds) => (
