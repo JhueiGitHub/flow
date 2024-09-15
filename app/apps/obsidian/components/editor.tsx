@@ -35,7 +35,7 @@ export default function Editor({ note, onUpdateNote }: EditorProps) {
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="w-full h-full p-2 border rounded"
+        className="w-full h-full p-2 border rounded resize-none"
       />
       {isSaving && <div className="text-sm text-gray-500">Saving...</div>}
     </div>

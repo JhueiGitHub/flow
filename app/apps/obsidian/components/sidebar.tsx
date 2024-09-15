@@ -9,12 +9,14 @@ interface SidebarProps {
   notes: NoteWithChildren[];
   onSelectNote: (note: NoteWithChildren) => void;
   onUpdateNotes: () => void;
+  backgroundColor: string;
 }
 
 export default function Sidebar({
   notes,
   onSelectNote,
   onUpdateNotes,
+  backgroundColor,
 }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
@@ -141,7 +143,8 @@ export default function Sidebar({
 
   return (
     <div
-      className="w-64 bg-gray-100 p-4 h-full overflow-y-auto relative"
+      className="w-64 p-4 h-full overflow-y-auto relative"
+      style={{ backgroundColor: backgroundColor }}
       onContextMenu={(e) => handleContextMenu(e, null)}
       onClick={() =>
         setContextMenu({ visible: false, x: 0, y: 0, parentId: null })

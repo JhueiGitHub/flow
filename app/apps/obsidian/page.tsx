@@ -152,6 +152,10 @@ export default function ObsidianPage() {
       "--background-color",
       designSystem.backgroundColor
     );
+    document.documentElement.style.setProperty(
+      "--editor-background",
+      designSystem.editorBackground
+    );
 
     const style = document.createElement("style");
     style.textContent = `
@@ -192,13 +196,20 @@ export default function ObsidianPage() {
   };
 
   return (
-    <div className="flex h-full bg-white">
+    <div
+      className="flex h-full"
+      style={{ backgroundColor: "var(--background-color)" }}
+    >
       <Sidebar
         notes={notes}
         onSelectNote={handleSelectNote}
         onUpdateNotes={handleUpdateNotes}
+        backgroundColor="var(--background-color)"
       />
-      <div className="flex-1">
+      <div
+        className="flex-1"
+        style={{ backgroundColor: "var(--editor-background)" }}
+      >
         {selectedNote ? (
           <Editor note={selectedNote} onUpdateNote={handleUpdateNote} />
         ) : (
