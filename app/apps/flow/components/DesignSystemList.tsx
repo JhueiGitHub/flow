@@ -1,4 +1,4 @@
-// /root/app/apps/flow/components/DesignSystemList.tsx
+// /root/app/flow/components/DesignSystemList.tsx
 
 import React from "react";
 import { DesignSystem } from "@prisma/client";
@@ -38,15 +38,6 @@ export default function DesignSystemList({
                 }}
               >
                 {system.backgroundColor}
-              </span>
-              , Editor:{" "}
-              <span
-                style={{
-                  backgroundColor: system.editorBackground,
-                  padding: "0 5px",
-                }}
-              >
-                {system.editorBackground}
               </span>
             </span>
             <button

@@ -28,23 +28,5 @@ export const initialProfile = async () => {
     },
   });
 
-  // Create initial design system
-  await createInitialDesignSystem(newProfile.id);
-
   return newProfile;
 };
-
-async function createInitialDesignSystem(profileId: string) {
-  await db.designSystem.create({
-    data: {
-      name: "Default Design System",
-      primaryColor: "#000000",
-      secondaryColor: "#ffffff",
-      backgroundColor: "rgba(47, 47, 47, 0.5)", // Semi-transparent dark background
-      editorBackground: "rgba(0, 0, 0, 0.5)", // Semi-transparent black for editor
-      primaryFont: "Arial",
-      secondaryFont: "Helvetica",
-      profileId: profileId,
-    },
-  });
-}

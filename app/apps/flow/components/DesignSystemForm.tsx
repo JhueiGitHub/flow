@@ -1,11 +1,13 @@
-// /root/app/apps/flow/components/DesignSystemForm.tsx
+// /root/app/flow/components/DesignSystemForm.tsx
 
 import React, { useState } from "react";
 import { DesignSystem } from "@prisma/client";
 
 interface DesignSystemFormProps {
   onCreate: (
-    system: Omit<DesignSystem, "id" | "createdAt" | "updatedAt" | "profileId">
+    system: Omit<DesignSystem, "id" | "createdAt" | "updatedAt"> & {
+      editorBackground: string;
+    }
   ) => Promise<void>;
 }
 
@@ -13,33 +15,35 @@ export default function DesignSystemForm({ onCreate }: DesignSystemFormProps) {
   const [name, setName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#000000");
   const [secondaryColor, setSecondaryColor] = useState("#ffffff");
-  const [backgroundColor, setBackgroundColor] = useState(
-    "rgba(47, 47, 47, 0.5)"
-  );
-  const [editorBackground, setEditorBackground] =
-    useState("rgba(0, 0, 0, 0.5)");
+  const [backgroundColor, setBackgroundColor] = useState("#f0f0f0");
   const [primaryFont, setPrimaryFont] = useState("");
   const [secondaryFont, setSecondaryFont] = useState("");
+  const [editorBackground, setEditorBackground] = useState("#ffffff");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onCreate({
-      name,
-      primaryColor,
-      secondaryColor,
-      backgroundColor,
-      editorBackground,
-      primaryFont,
-      secondaryFont,
-    });
-    // Reset form
-    setName("");
-    setPrimaryColor("#000000");
-    setSecondaryColor("#ffffff");
-    setBackgroundColor("rgba(47, 47, 47, 0.5)");
-    setEditorBackground("rgba(0, 0, 0, 0.5)");
-    setPrimaryFont("");
-    setSecondaryFont("");
+    try {
+      await onCreate({
+        name,
+        primaryColor,
+        secondaryColor,
+        backgroundColor,
+        editorBackground,
+        primaryFont,
+        secondaryFont,
+        profileId: "default-profile-id", // Replace with actual profile ID
+      });
+      console.log("Design system created successfully");
+      // Reset form
+      setName("");
+      setPrimaryColor("#000000");
+      setSecondaryColor("#ffffff");
+      setBackgroundColor("#f0f0f0");
+      setPrimaryFont("");
+      setSecondaryFont("");
+    } catch (error) {
+      console.error("Error creating design system:", error);
+    }
   };
 
   const handleFontUpload = async (
@@ -58,6 +62,8 @@ export default function DesignSystemForm({ onCreate }: DesignSystemFormProps) {
         if (response.ok) {
           const data = await response.json();
           setFont(data.fileName);
+        } else {
+          throw new Error("Failed to upload font");
         }
       } catch (error) {
         console.error("Error uploading font:", error);
@@ -96,20 +102,9 @@ export default function DesignSystemForm({ onCreate }: DesignSystemFormProps) {
       <div>
         <label>Background Color:</label>
         <input
-          type="text"
+          type="color"
           value={backgroundColor}
           onChange={(e) => setBackgroundColor(e.target.value)}
-          placeholder="rgba(47, 47, 47, 0.5)"
-          className="w-full p-2 border rounded"
-        />
-      </div>
-      <div>
-        <label>Editor Background:</label>
-        <input
-          type="text"
-          value={editorBackground}
-          onChange={(e) => setEditorBackground(e.target.value)}
-          placeholder="rgba(0, 0, 0, 0.5)"
           className="w-full p-2 border rounded"
         />
       </div>

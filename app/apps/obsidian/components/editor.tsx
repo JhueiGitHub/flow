@@ -1,32 +1,43 @@
-// /root/app/apps/obsidian/components/Editor.tsx
-
 import React from "react";
-import styles from "../styles/obsidian.module.css";
 import { Note } from "@prisma/client";
+import { useAutosave } from "@/hooks/debounce";
 
 interface EditorProps {
-  note: Note | null;
-  onUpdateNote: (id: string, title: string, content: string) => void;
+  note: Note;
+  onUpdateNote: (note: Note) => void;
 }
 
-const Editor: React.FC<EditorProps> = ({ note, onUpdateNote }) => {
-  if (!note) return null;
+export default function Editor({ note, onUpdateNote }: EditorProps) {
+  const saveNote = async (content: string) => {
+    const response = await fetch(`/api/notes/${note.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (response.ok) {
+      const updatedNote = await response.json();
+      onUpdateNote(updatedNote);
+    }
+  };
+
+  const { content, setContent, isSaving } = useAutosave({
+    onSave: saveNote,
+    delay: 1000,
+  });
+
+  React.useEffect(() => {
+    setContent(note.content);
+  }, [note.id, note.content]);
 
   return (
-    <div className={styles.editor}>
-      <input
-        type="text"
-        value={note.title}
-        onChange={(e) => onUpdateNote(note.id, e.target.value, note.content)}
-        className={styles.titleInput}
-      />
+    <div className="editor">
+      <h2>{note.title}</h2>
       <textarea
-        value={note.content}
-        onChange={(e) => onUpdateNote(note.id, note.title, e.target.value)}
-        className={styles.contentArea}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        className="w-full h-full p-2 border rounded"
       />
+      {isSaving && <div className="text-sm text-gray-500">Saving...</div>}
     </div>
   );
-};
-
-export default Editor;
+}

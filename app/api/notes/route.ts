@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { userId } = auth();
     if (!userId) {
@@ -19,17 +19,10 @@ export async function GET() {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
+    // Fetch all notes for the current user's profile
     const notes = await db.note.findMany({
       where: {
         profileId: profile.id,
-        parentId: null,
-      },
-      include: {
-        children: {
-          include: {
-            children: true,
-          },
-        },
       },
     });
     return NextResponse.json(notes);
