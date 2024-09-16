@@ -1,47 +1,44 @@
-// app/flow/page.tsx
-
-/*
-Core elements being considered:
-1. Overall layout and styling
-2. Design system list with card-based design
-3. Create new design system form
-4. Export and import functionality (UI elements only at this stage)
-5. Active design system display and edit functionality
-6. Color picker integration
-*/
+// /app/flow/page.tsx
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DesignSystem } from "@prisma/client";
 import DesignSystemCard from "./components/DesignSystemCard";
 import DesignSystemForm from "./components/DesignSystemForm";
 import ActiveDesignSystem from "./components/ActiveDesignSystem";
+import { FontUploader } from "./components/FontUploader";
 import { useDesignSystem } from "@/contexts/DesignSystemContext";
 
 export default function FlowPage() {
   const [designSystems, setDesignSystems] = useState<DesignSystem[]>([]);
   const { activeDesignSystem, setActiveDesignSystem } = useDesignSystem();
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDesignSystems = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/design-systems");
+      if (!response.ok) {
+        throw new Error("Failed to fetch design systems");
+      }
+      const data = await response.json();
+      setDesignSystems(data);
+    } catch (error) {
+      console.error("Error fetching design systems:", error);
+      setError("Failed to load design systems. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchDesignSystems();
-  }, []);
+  }, [fetchDesignSystems]);
 
-  // Preserved functionality: Fetching design systems
-  const fetchDesignSystems = async () => {
-    try {
-      const response = await fetch("/api/design-systems");
-      if (response.ok) {
-        const data = await response.json();
-        setDesignSystems(data);
-      }
-    } catch (error) {
-      console.error("Error fetching design systems:", error);
-    }
-  };
-
-  // Preserved functionality: Creating a new design system
   const handleCreateDesignSystem = async (newSystem: Partial<DesignSystem>) => {
     try {
       const response = await fetch("/api/design-systems", {
@@ -49,30 +46,76 @@ export default function FlowPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSystem),
       });
-      if (response.ok) {
-        await fetchDesignSystems();
-        setShowCreateForm(false);
+      if (!response.ok) {
+        throw new Error("Failed to create design system");
       }
+      await fetchDesignSystems();
+      setShowCreateForm(false);
     } catch (error) {
       console.error("Error creating design system:", error);
+      setError("Failed to create design system. Please try again.");
     }
   };
 
-  // New functionality: Handling design system export
-  const handleExport = async (id: string) => {
-    // TODO: Implement export functionality
-    console.log("Exporting design system:", id);
-  };
+  const handleActivateDesignSystem = useCallback(
+    async (system: DesignSystem) => {
+      try {
+        const response = await fetch(
+          `/api/design-systems/${system.id}/activate`,
+          {
+            method: "POST",
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to activate design system");
+        }
+        setActiveDesignSystem(system);
+        await fetchDesignSystems();
+      } catch (error) {
+        console.error("Error activating design system:", error);
+        setError("Failed to activate design system. Please try again.");
+      }
+    },
+    [setActiveDesignSystem, fetchDesignSystems]
+  );
 
-  // New functionality: Handling design system import
-  const handleImport = async (file: File) => {
-    // TODO: Implement import functionality
-    console.log("Importing design system:", file.name);
-  };
+  const handleExportDesignSystem = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`/api/design-systems/${id}/export`);
+      if (!response.ok) {
+        throw new Error("Failed to export design system");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = `design-system-${id}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exporting design system:", error);
+      setError("Failed to export design system. Please try again.");
+    }
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading design systems...</div>;
+  }
 
   return (
-    <div className="p-8 bg-black bg-opacity-60 min-h-screen">
+    <div className="p-8 bg-gray-100 min-h-screen">
       <h1 className="text-4xl font-bold mb-8">Flow Design System</h1>
+
+      {error && (
+        <div
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
+          role="alert"
+        >
+          <p>{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
@@ -82,8 +125,8 @@ export default function FlowPage() {
               <DesignSystemCard
                 key={system.id}
                 system={system}
-                onActivate={() => setActiveDesignSystem(system)}
-                onExport={() => handleExport(system.id)}
+                onActivate={() => handleActivateDesignSystem(system)}
+                onExport={() => handleExportDesignSystem(system.id)}
               />
             ))}
           </div>
@@ -93,13 +136,6 @@ export default function FlowPage() {
           >
             Create New Design System
           </button>
-          {/* New UI element for import functionality */}
-          <input
-            type="file"
-            accept=".flow"
-            onChange={(e) => e.target.files && handleImport(e.target.files[0])}
-            className="mt-4"
-          />
         </div>
 
         <div>
@@ -114,7 +150,10 @@ export default function FlowPage() {
               onCancel={() => setShowCreateForm(false)}
             />
           ) : activeDesignSystem ? (
-            <ActiveDesignSystem system={activeDesignSystem} />
+            <>
+              <ActiveDesignSystem system={activeDesignSystem} />
+              <FontUploader />
+            </>
           ) : (
             <p>
               No active design system. Select one from the list or create a new

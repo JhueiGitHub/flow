@@ -57,7 +57,9 @@ model DesignSystem {
   textAccentColor   String
 
   primaryFont   String
+  primaryFontUrl String?
   secondaryFont String
+  secondaryFontUrl String?
 
   editorBackground String
 
