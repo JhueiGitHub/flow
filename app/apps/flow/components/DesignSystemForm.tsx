@@ -1,144 +1,138 @@
 // app/flow/components/DesignSystemForm.tsx
 
-/*
-Functionality:
-- Provides a form for creating new design systems
-- Includes inputs for all design system properties
-- Utilizes the custom ColorPicker component for color selection
-- Handles form submission and passes the new design system data to the parent component
-*/
-
 import React, { useState } from "react";
-import { DesignSystem } from "@prisma/client";
+import { DesignSystem } from "@/types/DesignSystem";
 import ColorPicker from "./ColorPicker";
 
 interface DesignSystemFormProps {
   onSubmit: (newSystem: Partial<DesignSystem>) => Promise<void>;
+  onCancel: () => void;
 }
 
-export default function DesignSystemForm({ onSubmit }: DesignSystemFormProps) {
-  const [name, setName] = useState("");
-  const [primaryColor, setPrimaryColor] = useState("#000000");
-  const [secondaryColor, setSecondaryColor] = useState("#FFFFFF");
-  const [backgroundColor, setBackgroundColor] = useState("#F0F0F0");
-  const [overlayBackground, setOverlayBackground] = useState("#00000080");
-  const [overlayBorder, setOverlayBorder] = useState("#FFFFFF40");
-  const [textPrimary, setTextPrimary] = useState("#000000");
-  const [accentColor, setAccentColor] = useState("#0000FF");
-  const [textAccentColor, setTextAccentColor] = useState("#FF0000");
-  const [primaryFont, setPrimaryFont] = useState("Arial");
-  const [secondaryFont, setSecondaryFont] = useState("Helvetica");
-  const [editorBackground, setEditorBackground] = useState("#FFFFFF");
+export default function DesignSystemForm({
+  onSubmit,
+  onCancel,
+}: DesignSystemFormProps) {
+  const [formData, setFormData] = useState<Partial<DesignSystem>>({
+    name: "",
+    primaryColor: "#000000",
+    secondaryColor: "#FFFFFF",
+    backgroundColor: "#F0F0F0",
+    overlayBackground: "#00000080",
+    overlayBorder: "#FFFFFF40",
+    textPrimary: "#000000",
+    accentColor: "#0000FF",
+    textAccentColor: "#FF0000",
+    primaryFont: "Arial",
+    secondaryFont: "Helvetica",
+    editorBackground: "#FFFFFF",
+  });
+
+  const handleChange = (key: keyof DesignSystem, value: string) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newSystem: Partial<DesignSystem> = {
-      name,
-      primaryColor,
-      secondaryColor,
-      backgroundColor,
-      overlayBackground,
-      overlayBorder,
-      textPrimary,
-      accentColor,
-      textAccentColor,
-      primaryFont,
-      secondaryFont,
-      editorBackground,
-    };
-    await onSubmit(newSystem);
-    // Reset form
-    setName("");
-    setPrimaryColor("#000000");
-    setSecondaryColor("#FFFFFF");
-    setBackgroundColor("#F0F0F0");
-    setOverlayBackground("#00000080");
-    setOverlayBorder("#FFFFFF40");
-    setTextPrimary("#000000");
-    setAccentColor("#0000FF");
-    setTextAccentColor("#FF0000");
-    setPrimaryFont("Arial");
-    setSecondaryFont("Helvetica");
-    setEditorBackground("#FFFFFF");
+    await onSubmit(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Design System Name"
-        className="w-full p-2 border rounded"
-        required
-      />
-      <ColorPicker
-        color={primaryColor}
-        onChange={setPrimaryColor}
-        label="Primary Color"
-      />
-      <ColorPicker
-        color={secondaryColor}
-        onChange={setSecondaryColor}
-        label="Secondary Color"
-      />
-      <ColorPicker
-        color={backgroundColor}
-        onChange={setBackgroundColor}
-        label="Background Color"
-      />
-      <ColorPicker
-        color={overlayBackground}
-        onChange={setOverlayBackground}
-        label="Overlay Background"
-      />
-      <ColorPicker
-        color={overlayBorder}
-        onChange={setOverlayBorder}
-        label="Overlay Border"
-      />
-      <ColorPicker
-        color={textPrimary}
-        onChange={setTextPrimary}
-        label="Text Primary"
-      />
-      <ColorPicker
-        color={accentColor}
-        onChange={setAccentColor}
-        label="Accent Color"
-      />
-      <ColorPicker
-        color={textAccentColor}
-        onChange={setTextAccentColor}
-        label="Text Accent Color"
-      />
-      <ColorPicker
-        color={editorBackground}
-        onChange={setEditorBackground}
-        label="Editor Background"
-      />
-      <input
-        type="text"
-        value={primaryFont}
-        onChange={(e) => setPrimaryFont(e.target.value)}
-        placeholder="Primary Font"
-        className="w-full p-2 border rounded"
-        required
-      />
-      <input
-        type="text"
-        value={secondaryFont}
-        onChange={(e) => setSecondaryFont(e.target.value)}
-        placeholder="Secondary Font"
-        className="w-full p-2 border rounded"
-        required
-      />
-      <button
-        type="submit"
-        className="w-full p-2 bg-blue-500 text-white rounded"
-      >
-        Create Design System
-      </button>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 bg-white p-6 rounded-lg shadow"
+    >
+      <div>
+        <label
+          htmlFor="name"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Design System Name
+        </label>
+        <input
+          type="text"
+          id="name"
+          value={formData.name}
+          onChange={(e) => handleChange("name", e.target.value)}
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          required
+        />
+      </div>
+
+      {Object.entries(formData).map(([key, value]) => {
+        if (
+          typeof value === "string" &&
+          key !== "name" &&
+          key !== "primaryFont" &&
+          key !== "secondaryFont"
+        ) {
+          return (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700">
+                {key.charAt(0).toUpperCase() + key.slice(1)}
+              </label>
+              <ColorPicker
+                color={value}
+                onChange={(color) =>
+                  handleChange(key as keyof DesignSystem, color)
+                }
+                label={key}
+              />
+            </div>
+          );
+        }
+        return null;
+      })}
+
+      <div>
+        <label
+          htmlFor="primaryFont"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Primary Font
+        </label>
+        <input
+          type="text"
+          id="primaryFont"
+          value={formData.primaryFont}
+          onChange={(e) => handleChange("primaryFont", e.target.value)}
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          required
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="secondaryFont"
+          className="block text-sm font-medium text-gray-700"
+        >
+          Secondary Font
+        </label>
+        <input
+          type="text"
+          id="secondaryFont"
+          value={formData.secondaryFont}
+          onChange={(e) => handleChange("secondaryFont", e.target.value)}
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          required
+        />
+      </div>
+
+      <div className="flex justify-end space-x-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+        >
+          Create Design System
+        </button>
+      </div>
     </form>
   );
 }

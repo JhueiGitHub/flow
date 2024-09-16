@@ -2,19 +2,20 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Note, DesignSystem } from "@prisma/client";
 import Sidebar from "./components/sidebar";
 import Editor from "./components/editor";
+import StatusIndicator from "./components/StatusIndicator";
 import { useDesignSystem } from "@/contexts/DesignSystemContext";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-
 export default function ObsidianPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const { activeDesignSystem, setActiveDesignSystem } = useDesignSystem();
   const [designSystems, setDesignSystems] = useState<DesignSystem[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchNotes();
@@ -63,12 +64,26 @@ export default function ObsidianPage() {
     }
   };
 
-  const handleUpdateNote = (updatedNote: Note) => {
-    setNotes((prevNotes) =>
-      prevNotes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
-    );
-    setSelectedNote(updatedNote);
-  };
+  const handleUpdateNote = useCallback(async (updatedNote: Note) => {
+    try {
+      const response = await fetch(`/api/notes/${updatedNote.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedNote),
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setNotes((prevNotes) =>
+          prevNotes.map((note) => (note.id === updated.id ? updated : note))
+        );
+        setSelectedNote(updated);
+      } else {
+        console.error("Error updating note:", await response.text());
+      }
+    } catch (error) {
+      console.error("Error updating note:", error);
+    }
+  }, []);
 
   const handleSelectDesignSystem = async (designSystemId: string) => {
     try {
@@ -107,6 +122,9 @@ export default function ObsidianPage() {
             style={{
               padding: "10px",
               borderBottom: `1px solid ${activeDesignSystem?.overlayBorder}`,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
             }}
           >
             <select
@@ -126,12 +144,14 @@ export default function ObsidianPage() {
                 </option>
               ))}
             </select>
+            <StatusIndicator isSaving={isSaving} />
           </div>
           {selectedNote ? (
             <Editor
               note={selectedNote}
               onUpdateNote={handleUpdateNote}
               padding="30px"
+              setIsSaving={setIsSaving}
             />
           ) : (
             <div

@@ -4,14 +4,21 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Note } from "@prisma/client";
 import { useDesignSystem } from "@/contexts/DesignSystemContext";
 import styles from "../styles/obsidian.module.css";
+import { debounce } from "@/app/utils/debounce";
 
 interface EditorProps {
   note: Note;
   onUpdateNote: (updatedNote: Note) => void;
   padding: string;
+  setIsSaving: (isSaving: boolean) => void;
 }
 
-export default function Editor({ note, onUpdateNote, padding }: EditorProps) {
+export default function Editor({
+  note,
+  onUpdateNote,
+  padding,
+  setIsSaving,
+}: EditorProps) {
   const [content, setContent] = useState(note.content || "");
   const { activeDesignSystem } = useDesignSystem();
 
@@ -19,22 +26,23 @@ export default function Editor({ note, onUpdateNote, padding }: EditorProps) {
     setContent(note.content || "");
   }, [note.id, note.content]);
 
-  const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setContent(e.target.value);
-    },
-    []
+  const debouncedUpdateNote = useCallback(
+    debounce((updatedContent: string) => {
+      setIsSaving(true);
+      onUpdateNote({ ...note, content: updatedContent });
+      setTimeout(() => setIsSaving(false), 1000);
+    }, 1000),
+    [note, onUpdateNote, setIsSaving]
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (content !== note.content) {
-        onUpdateNote({ ...note, content });
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [content, note, onUpdateNote]);
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newContent = e.target.value;
+      setContent(newContent);
+      debouncedUpdateNote(newContent);
+    },
+    [debouncedUpdateNote]
+  );
 
   return (
     <div
@@ -49,6 +57,11 @@ export default function Editor({ note, onUpdateNote, padding }: EditorProps) {
           backgroundColor: "transparent",
           color: activeDesignSystem?.textPrimary,
           fontFamily: activeDesignSystem?.secondaryFont,
+          width: "100%",
+          height: "calc(100% - 40px)",
+          border: "none",
+          outline: "none",
+          resize: "none",
         }}
       />
     </div>
