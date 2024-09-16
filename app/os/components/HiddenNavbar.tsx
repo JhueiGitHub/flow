@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, useSpring } from "framer-motion";
+import { UserButton } from "@clerk/nextjs";
 
 const HiddenNavbar: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -22,7 +23,16 @@ const HiddenNavbar: React.FC = () => {
       className="fixed top-0 left-0 right-0 h-16 bg-black bg-opacity-50 backdrop-blur-md z-50"
       style={{ y: navbarY }}
     >
-      <div className="absolute top-4 right-4"></div>
+      <div className="absolute top-4 right-4">
+        <UserButton
+          afterSignOutUrl="/"
+          appearance={{
+            elements: {
+              avatarBox: "h-[48px] w-[48px]",
+            },
+          }}
+        />
+      </div>
     </motion.div>
   );
 };

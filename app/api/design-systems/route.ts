@@ -1,60 +1,45 @@
-// /app/api/design-systems/route.ts
-
+// app/api/design-systems/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@clerk/nextjs";
+import { currentProfile } from "@/lib/current-profile";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    // Preserved functionality: Fetch all design systems
-    const designSystems = await db.designSystem.findMany();
-    console.log("Fetched design systems:", designSystems);
+    const profile = await currentProfile();
+    if (!profile) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    const designSystems = await db.designSystem.findMany({
+      where: { profileId: profile.id },
+    });
+
     return NextResponse.json(designSystems);
   } catch (error) {
-    console.error("Error fetching design systems:", error);
-    return NextResponse.json(
-      { error: "Error fetching design systems" },
-      { status: 500 }
-    );
+    console.error("[DESIGN_SYSTEMS_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const data = await request.json();
-    console.log("Received data for new design system:", data);
-
-    // New functionality: Find the profile associated with the current user
-    const profile = await db.profile.findUnique({
-      where: { userId: userId },
-    });
-
+    const profile = await currentProfile();
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // New functionality: Create design system associated with the user's profile
-    const newDesignSystem = await db.designSystem.create({
+    const designSystemData = await req.json();
+
+    const designSystem = await db.designSystem.create({
       data: {
-        ...data,
+        ...designSystemData,
         profileId: profile.id,
       },
     });
 
-    console.log("Created new design system:", newDesignSystem);
-    return NextResponse.json(newDesignSystem, { status: 201 });
+    return NextResponse.json(designSystem);
   } catch (error) {
-    console.error("Error creating design system:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return NextResponse.json(
-      { error: "Error creating design system", details: errorMessage },
-      { status: 500 }
-    );
+    console.error("[DESIGN_SYSTEMS_POST]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }

@@ -1,147 +1,85 @@
-/* /root/app/apps/obsidian/styles/obsidian.css */
-
 :root {
-  --bg-underlying: url("https://github.com/JhueiGitHub/obs/blob/main/obsBGTeall.png?raw=true");
-  --bg-overlay: rgba(0, 0, 0, 0.65);
-  --text-normal: #939fad;
-  --text-accent: #367867;
-  --text-accent-hover: #83909f;
-  --link-color: #15946f;
-  --link-color-hover: #1a7251;
-  --border-radius: 12px;
-  --accent-color: #367867;
+  --underlying-background: #292929d0;
+  --overlaying-background: #01020369;
+  --overlaying-border: #cccccc2e;
+  --text-primary: #708394;
+  --accent-color: #2a9a79;
+  --text-accent-color: #8069c4;
+  --light-teal: #2a9a79;
+  --deep-teal: #1a7a61;
+  --deep-blue: #166e6a;
+  --light-blue: #1d8e86;
+  --blue-lilac: #5770b4;
+  --deep-blue-lilac: #455a96;
+  --deep-pink-lilac: #6a51a6;
+  --pink-lilac: #8069c4;
+  --rose: #c45c8a;
 }
 
-/* Preserve original functionality: Overall app layout */
 .obsidian-app {
   display: flex;
-  min-height: 100vh;
-  background-image: var(--bg-underlying);
-  background-position: bottom;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  height: 100vh;
 }
 
-/* New styling: Sidebar background */
 .sidebar {
-  background-color: transparent;
-  backdrop-filter: blur(28px);
-  padding: 1rem;
-  width: 250px;
-  overflow-y: auto;
-  color: var(--text-normal);
+  width: 228px;
+  padding: 18px;
+  background-color: var(--underlying-background);
+  color: var(--text-primary);
 }
 
-/* New styling: Editor container */
 .editor-container {
   flex-grow: 1;
-  padding: 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  margin: 14px;
+  background-color: var(--overlaying-background);
 }
 
-/* New styling: Editor pane */
 .editor {
-  background-color: var(--bg-overlay);
-  backdrop-filter: blur(28px);
-  border-radius: var(--border-radius);
-  padding: 2rem;
-  width: 100%;
-  max-width: 800px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  color: var(--text-primary);
 }
 
-/* Preserve original functionality: Note and folder items */
-.note-item,
 .folder-item {
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-radius: var(--border-radius);
-  transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
-/* New styling: Hover effects */
-.note-item:hover,
-.folder-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+.folder-item-00 {
+  color: var(--light-teal);
+}
+.folder-item-01 {
+  color: var(--deep-teal);
+}
+.folder-item-02 {
+  color: var(--deep-blue);
+}
+.folder-item-03 {
+  color: var(--light-blue);
+}
+.folder-item-04 {
+  color: var(--blue-lilac);
+}
+.folder-item-05 {
+  color: var(--deep-blue-lilac);
+}
+.folder-item-06 {
+  color: var(--deep-pink-lilac);
+}
+.folder-item-07 {
+  color: var(--pink-lilac);
+}
+.folder-item-99 {
+  color: var(--rose);
 }
 
-/* Preserve original functionality: Textarea */
-textarea {
-  background-color: transparent;
-  color: var(--text-normal);
-  border: none;
-  width: 100%;
-  height: calc(100vh - 200px);
-  resize: none;
+.note-item {
+  color: var(--text-primary);
 }
 
-/* New styling: Headings */
-.editor h1,
-.editor h2,
-.editor h3,
-.editor h4,
-.editor h5,
-.editor h6 {
-  color: var(--text-accent);
-  font-family: "Exemplar Pro", sans-serif;
+.context-menu {
+  background-color: var(--overlaying-background);
+  border: 1px solid var(--overlaying-border);
 }
 
-/* New styling: Links */
-.editor a {
-  color: var(--link-color);
-  text-decoration: none;
-}
-
-.editor a:hover {
-  color: var(--link-color-hover);
-}
-
-/* New styling: Design system selector */
-.design-system-selector {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1000;
-}
-
-.design-system-select {
-  background-color: var(--bg-overlay);
-  color: var(--text-normal);
-  border: none;
-  border-radius: var(--border-radius);
-  padding: 0.5rem;
-  backdrop-filter: blur(28px);
-}
-
-/* Preserve original functionality: Autohide components */
-.tab-container:not(:hover) .tab,
-.status-bar:not(:hover),
-.side-dock-ribbon:not(:hover),
-.workspace-tab-header-container:not(:hover) {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.tab-container:hover .tab,
-.status-bar:hover,
-.side-dock-ribbon:hover,
-.workspace-tab-header-container:hover {
-  opacity: 1;
-}
-
-/* New styling: Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--accent-color);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-track {
-  background-color: transparent;
+.drag-over {
+  background-color: var(--overlaying-background);
 }

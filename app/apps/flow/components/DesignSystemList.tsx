@@ -1,4 +1,12 @@
-// /root/app/flow/components/DesignSystemList.tsx
+// app/flow/components/DesignSystemList.tsx
+
+/*
+Functionality:
+- Displays a list of all design systems
+- Provides options to edit, delete, and activate design systems
+- Shows which design system is currently active
+- Handles user interactions for managing design systems
+*/
 
 import React from "react";
 import { DesignSystem } from "@prisma/client";
@@ -6,49 +14,45 @@ import { DesignSystem } from "@prisma/client";
 interface DesignSystemListProps {
   systems: DesignSystem[];
   onDelete: (id: string) => Promise<void>;
+  onActivate: (system: DesignSystem) => Promise<void>;
+  activeSystemId: string | undefined;
 }
 
-export default function DesignSystemList({
+const DesignSystemList: React.FC<DesignSystemListProps> = ({
   systems,
   onDelete,
-}: DesignSystemListProps) {
+  onActivate,
+  activeSystemId,
+}) => {
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-bold mb-4">Existing Design Systems</h2>
-      <ul className="space-y-2">
-        {systems.map((system) => (
-          <li
-            key={system.id}
-            className="p-2 border rounded flex justify-between items-center"
-          >
-            <span>
-              {system.name} - Primary:{" "}
-              <span style={{ color: system.primaryColor }}>
-                {system.primaryColor}
-              </span>
-              , Secondary:{" "}
-              <span style={{ color: system.secondaryColor }}>
-                {system.secondaryColor}
-              </span>
-              , Background:{" "}
-              <span
-                style={{
-                  backgroundColor: system.backgroundColor,
-                  padding: "0 5px",
-                }}
-              >
-                {system.backgroundColor}
-              </span>
-            </span>
+    <ul className="space-y-2">
+      {systems.map((system) => (
+        <li
+          key={system.id}
+          className="flex items-center justify-between p-2 border rounded"
+        >
+          <span>
+            {system.name} {system.id === activeSystemId && " (Active)"}
+          </span>
+          <div>
+            <button
+              onClick={() => onActivate(system)}
+              className="px-2 py-1 mr-2 text-white bg-blue-500 rounded"
+              disabled={system.id === activeSystemId}
+            >
+              {system.id === activeSystemId ? "Active" : "Activate"}
+            </button>
             <button
               onClick={() => onDelete(system.id)}
-              className="px-2 py-1 bg-red-500 text-white rounded"
+              className="px-2 py-1 text-white bg-red-500 rounded"
             >
               Delete
             </button>
-          </li>
-        ))}
-      </ul>
-    </div>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
-}
+};
+
+export default DesignSystemList;

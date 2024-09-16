@@ -1,158 +1,282 @@
-// /root/app/obsidian/components/Sidebar.tsx
+// /app/obsidian/components/Sidebar.tsx
 
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Note } from "@prisma/client";
-
-type NoteWithChildren = Note & { children?: NoteWithChildren[] };
+import { useDesignSystem } from "@/contexts/DesignSystemContext";
+import ContextMenu from "./ContextMenu";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 
 interface SidebarProps {
-  notes: NoteWithChildren[];
-  onSelectNote: (note: NoteWithChildren) => void;
+  notes: Note[];
+  onSelectNote: (note: Note) => void;
   onUpdateNotes: () => void;
-  backgroundColor: string;
+  width: string;
+  padding: string;
 }
 
-export default function Sidebar({
+interface DraggableItemProps {
+  note: Note;
+  depth: number;
+  onDrop: (draggedId: string, targetId: string) => void;
+  onContextMenu: (e: React.MouseEvent, note: Note) => void;
+  onClick: () => void;
+  isExpanded: boolean;
+}
+
+const DraggableItem: React.FC<DraggableItemProps> = ({
+  note,
+  depth,
+  onDrop,
+  onContextMenu,
+  onClick,
+  isExpanded,
+}) => {
+  const { activeDesignSystem } = useDesignSystem();
+
+  const [{ isDragging }, drag] = useDrag({
+    type: "NOTE",
+    item: { id: note.id },
+    collect: (monitor) => ({
+      isDragging: !!monitor.isDragging(),
+    }),
+  });
+
+  const [{ isOver }, drop] = useDrop({
+    accept: "NOTE",
+    drop: (item: { id: string }) => {
+      if (item.id !== note.id) {
+        onDrop(item.id, note.id);
+      }
+    },
+    collect: (monitor) => ({
+      isOver: !!monitor.isOver(),
+    }),
+  });
+
+  const ref = useRef(null);
+  drag(drop(ref));
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        marginLeft: `${depth * 20}px`,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: "pointer",
+        color: note.isFolder
+          ? activeDesignSystem?.accentColor
+          : activeDesignSystem?.textPrimary,
+        backgroundColor: isOver
+          ? activeDesignSystem?.overlayBackground
+          : "transparent",
+      }}
+      onClick={onClick}
+      onContextMenu={(e) => onContextMenu(e, note)}
+    >
+      {note.isFolder ? (isExpanded ? "📂" : "📁") : "📄"} {note.title}
+    </div>
+  );
+};
+
+const Sidebar: React.FC<SidebarProps> = ({
   notes,
   onSelectNote,
   onUpdateNotes,
-  backgroundColor,
-}: SidebarProps) {
+  width,
+  padding,
+}) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
   );
   const [contextMenu, setContextMenu] = useState<{
-    visible: boolean;
     x: number;
     y: number;
-    parentId: string | null;
-  }>({ visible: false, x: 0, y: 0, parentId: null });
+    note: Note | null;
+  } | null>(null);
+  const { activeDesignSystem } = useDesignSystem();
 
-  const toggleFolder = (folderId: string) => {
-    setExpandedFolders((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(folderId)) {
-        newSet.delete(folderId);
-      } else {
-        newSet.add(folderId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleContextMenu = (e: React.MouseEvent, parentId: string | null) => {
-    e.preventDefault();
-    setContextMenu({ visible: true, x: e.clientX, y: e.clientY, parentId });
-  };
-
-  const createItem = async (isFolder: boolean) => {
-    const title = isFolder ? "New Folder" : "New Note";
-    const response = await fetch("/api/notes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, isFolder, parentId: contextMenu.parentId }),
-    });
-
-    if (response.ok) {
-      onUpdateNotes();
+  useEffect(() => {
+    const savedExpanded = localStorage.getItem("expandedFolders");
+    if (savedExpanded) {
+      setExpandedFolders(new Set(JSON.parse(savedExpanded)));
     }
-    setContextMenu({ visible: false, x: 0, y: 0, parentId: null });
-  };
+  }, []);
 
-  const handleDragStart = (e: React.DragEvent, noteId: string) => {
-    e.dataTransfer.setData("noteId", noteId);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    const noteId = e.dataTransfer.getData("noteId");
-    if (noteId === targetId) return; // Prevent dropping on itself
-
-    const response = await fetch(`/api/notes/${noteId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ parentId: targetId }),
-    });
-
-    if (response.ok) {
-      onUpdateNotes();
-    }
-  };
-
-  const renderNotes = (notes: NoteWithChildren[], depth = 0) => {
-    return notes.map((note) => (
-      <div
-        key={note.id}
-        style={{ marginLeft: `${depth * 20}px` }}
-        onContextMenu={(e) => handleContextMenu(e, note.id)}
-        draggable
-        onDragStart={(e) => handleDragStart(e, note.id)}
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, note.id)}
-      >
-        {note.isFolder ? (
-          <div>
-            <span
-              onClick={() => toggleFolder(note.id)}
-              className="cursor-pointer"
-            >
-              {expandedFolders.has(note.id) ? "📂" : "📁"} {note.title}
-            </span>
-            {expandedFolders.has(note.id) && note.children && (
-              <div>{renderNotes(note.children, depth + 1)}</div>
-            )}
-          </div>
-        ) : (
-          <div onClick={() => onSelectNote(note)} className="cursor-pointer">
-            📄 {note.title}
-          </div>
-        )}
-      </div>
-    ));
-  };
-
-  const renderContextMenu = () => {
-    if (!contextMenu.visible) return null;
-
-    return (
-      <div
-        style={{
-          position: "absolute",
-          top: contextMenu.y,
-          left: contextMenu.x,
-          background: "white",
-          border: "1px solid #ccc",
-          borderRadius: "4px",
-          padding: "8px",
-          zIndex: 1000,
-        }}
-      >
-        <div onClick={() => createItem(false)} className="cursor-pointer">
-          New Note
-        </div>
-        <div onClick={() => createItem(true)} className="cursor-pointer">
-          New Folder
-        </div>
-      </div>
+  useEffect(() => {
+    localStorage.setItem(
+      "expandedFolders",
+      JSON.stringify(Array.from(expandedFolders))
     );
-  };
+  }, [expandedFolders]);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, note: Note | null) => {
+      e.preventDefault();
+      setContextMenu({ x: e.clientX, y: e.clientY, note });
+    },
+    []
+  );
+
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  const handleCreateItem = useCallback(
+    async (isFolder: boolean) => {
+      try {
+        const response = await fetch("/api/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: isFolder ? "New Folder" : "New Note",
+            isFolder,
+            parentId: contextMenu?.note?.id,
+          }),
+        });
+        if (response.ok) {
+          onUpdateNotes();
+        }
+      } catch (error) {
+        console.error("Error creating item:", error);
+      }
+      handleCloseContextMenu();
+    },
+    [contextMenu, onUpdateNotes]
+  );
+
+  const handleDeleteItem = useCallback(async () => {
+    if (contextMenu?.note) {
+      try {
+        const response = await fetch(`/api/notes/${contextMenu.note.id}`, {
+          method: "DELETE",
+        });
+        if (response.ok) {
+          onUpdateNotes();
+        }
+      } catch (error) {
+        console.error("Error deleting item:", error);
+      }
+    }
+    handleCloseContextMenu();
+  }, [contextMenu, onUpdateNotes]);
+
+  const handleRenameItem = useCallback(async () => {
+    if (contextMenu?.note) {
+      const newTitle = prompt("Enter new name:", contextMenu.note.title);
+      if (newTitle && newTitle !== contextMenu.note.title) {
+        try {
+          const response = await fetch(`/api/notes/${contextMenu.note.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: newTitle }),
+          });
+          if (response.ok) {
+            onUpdateNotes();
+          }
+        } catch (error) {
+          console.error("Error renaming item:", error);
+        }
+      }
+    }
+    handleCloseContextMenu();
+  }, [contextMenu, onUpdateNotes]);
+
+  const toggleFolder = useCallback((folderId: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDrop = useCallback(
+    async (draggedId: string, targetId: string) => {
+      try {
+        const response = await fetch(`/api/notes/${draggedId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentId: targetId }),
+        });
+        if (response.ok) {
+          onUpdateNotes();
+        } else {
+          console.error("Error moving note:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error moving note:", error);
+      }
+    },
+    [onUpdateNotes]
+  );
+
+  const renderNotes = useCallback(
+    (notesToRender: Note[], depth = 0) => {
+      return notesToRender.map((note) => (
+        <React.Fragment key={note.id}>
+          <DraggableItem
+            note={note}
+            depth={depth}
+            onDrop={handleDrop}
+            onContextMenu={handleContextMenu}
+            onClick={() =>
+              note.isFolder ? toggleFolder(note.id) : onSelectNote(note)
+            }
+            isExpanded={expandedFolders.has(note.id)}
+          />
+          {note.isFolder &&
+            expandedFolders.has(note.id) &&
+            renderNotes(
+              notes.filter((n) => n.parentId === note.id),
+              depth + 1
+            )}
+        </React.Fragment>
+      ));
+    },
+    [
+      notes,
+      expandedFolders,
+      handleContextMenu,
+      handleDrop,
+      onSelectNote,
+      toggleFolder,
+    ]
+  );
 
   return (
-    <div
-      className="w-64 p-4 h-full overflow-y-auto relative"
-      style={{ backgroundColor: backgroundColor }}
-      onContextMenu={(e) => handleContextMenu(e, null)}
-      onClick={() =>
-        setContextMenu({ visible: false, x: 0, y: 0, parentId: null })
-      }
-    >
-      <h2 className="text-xl font-bold mb-4">Notes</h2>
-      {renderNotes(notes)}
-      {renderContextMenu()}
-    </div>
+    <DndProvider backend={HTML5Backend}>
+      <div
+        style={{
+          width,
+          padding,
+          height: "100%",
+          overflowY: "auto",
+          backgroundColor: activeDesignSystem?.backgroundColor,
+          color: activeDesignSystem?.textPrimary,
+        }}
+        onContextMenu={(e) => handleContextMenu(e, null)}
+        onClick={handleCloseContextMenu}
+      >
+        {renderNotes(notes.filter((n) => !n.parentId))}
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            note={contextMenu.note}
+            onCreateNote={() => handleCreateItem(false)}
+            onCreateFolder={() => handleCreateItem(true)}
+            onRename={handleRenameItem}
+            onDelete={handleDeleteItem}
+            onClose={handleCloseContextMenu}
+          />
+        )}
+      </div>
+    </DndProvider>
   );
-}
+};
+
+export default Sidebar;

@@ -1,69 +1,50 @@
-// /root/app/api/notes/route.ts
+// /app/api/notes/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@clerk/nextjs";
+import { currentProfile } from "@/lib/current-profile";
 
-export async function GET(request: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const profile = await db.profile.findUnique({
-      where: { userId: userId },
-    });
-
+    const profile = await currentProfile();
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Fetch all notes for the current user's profile
     const notes = await db.note.findMany({
-      where: {
-        profileId: profile.id,
-      },
+      where: { profileId: profile.id },
+      orderBy: { updatedAt: "desc" },
     });
+
     return NextResponse.json(notes);
   } catch (error) {
-    console.error("Error fetching notes:", error);
-    return NextResponse.json(
-      { error: "Error fetching notes" },
-      { status: 500 }
-    );
+    console.error("[NOTES_GET]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const profile = await db.profile.findUnique({
-      where: { userId: userId },
-    });
-
+    const profile = await currentProfile();
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { title, isFolder, parentId } = await request.json();
+    const { title, content, isFolder, parentId } = await req.json();
 
-    const newNote = await db.note.create({
+    const note = await db.note.create({
       data: {
-        title,
-        isFolder,
-        content: "",
-        parentId,
         profileId: profile.id,
+        title,
+        content: content || "",
+        isFolder: isFolder || false,
+        parentId: parentId || null,
       },
     });
-    return NextResponse.json(newNote, { status: 201 });
+
+    return NextResponse.json(note);
   } catch (error) {
-    console.error("Error creating note:", error);
-    return NextResponse.json({ error: "Error creating note" }, { status: 500 });
+    console.error("[NOTES_POST]", error);
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }

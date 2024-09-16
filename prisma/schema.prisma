@@ -11,28 +11,29 @@ datasource db {
 }
 
 model Profile {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  name      String
-  imageUrl  String   @db.Text
-  email     String   @db.Text
+  id       String @id @default(uuid())
+  userId   String @unique
+  name     String
+  imageUrl String @db.Text
+  email    String @db.Text
 
-  notes     Note[]
+  notes         Note[]
   designSystems DesignSystem[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  FontFile  FontFile[]
 }
 
 model Note {
-  id        String   @id @default(uuid())
-  title     String
-  content   String   @db.Text
-  isFolder  Boolean  @default(false)
-  parentId  String?
+  id       String  @id @default(uuid())
+  title    String
+  content  String?
+  isFolder Boolean @default(false)
+  parentId String?
 
   profileId String
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -42,29 +43,44 @@ model Note {
 }
 
 model DesignSystem {
-  id               String   @id @default(uuid())
-  name             String
-  primaryColor     String
-  secondaryColor   String
-  backgroundColor  String
-  primaryFont      String
-  secondaryFont    String
+  id       String  @id @default(uuid())
+  name     String
+  isActive Boolean @default(false)
 
-  profileId        String
-  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  primaryColor      String
+  secondaryColor    String
+  backgroundColor   String
+  overlayBackground String
+  overlayBorder     String
+  textPrimary       String
+  accentColor       String
+  textAccentColor   String
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  primaryFont   String
+  secondaryFont String
+
+  editorBackground String
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([profileId])
 }
 
 model FontFile {
-  id        String   @id @default(uuid())
-  name      String
-  fileName  String
-  fileUrl   String   @db.Text
+  id       String @id @default(uuid())
+  name     String
+  fileName String
+  fileUrl  String @db.Text
+
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([profileId])
 }

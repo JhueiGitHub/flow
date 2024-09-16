@@ -1,43 +1,56 @@
-import React from "react";
+// /app/obsidian/components/Editor.tsx
+
+import React, { useState, useEffect, useCallback } from "react";
 import { Note } from "@prisma/client";
-import { useAutosave } from "@/hooks/debounce";
+import { useDesignSystem } from "@/contexts/DesignSystemContext";
+import styles from "../styles/obsidian.module.css";
 
 interface EditorProps {
   note: Note;
-  onUpdateNote: (note: Note) => void;
+  onUpdateNote: (updatedNote: Note) => void;
+  padding: string;
 }
 
-export default function Editor({ note, onUpdateNote }: EditorProps) {
-  const saveNote = async (content: string) => {
-    const response = await fetch(`/api/notes/${note.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    if (response.ok) {
-      const updatedNote = await response.json();
-      onUpdateNote(updatedNote);
-    }
-  };
+export default function Editor({ note, onUpdateNote, padding }: EditorProps) {
+  const [content, setContent] = useState(note.content || "");
+  const { activeDesignSystem } = useDesignSystem();
 
-  const { content, setContent, isSaving } = useAutosave({
-    onSave: saveNote,
-    delay: 1000,
-  });
-
-  React.useEffect(() => {
-    setContent(note.content);
+  useEffect(() => {
+    setContent(note.content || "");
   }, [note.id, note.content]);
 
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setContent(e.target.value);
+    },
+    []
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (content !== note.content) {
+        onUpdateNote({ ...note, content });
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [content, note, onUpdateNote]);
+
   return (
-    <div className="editor">
-      <h2>{note.title}</h2>
+    <div
+      className={styles.editor}
+      style={{ padding, backgroundColor: activeDesignSystem?.editorBackground }}
+    >
+      <h1 style={{ color: activeDesignSystem?.accentColor }}>{note.title}</h1>
       <textarea
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="w-full h-full p-2 border rounded resize-none"
+        onChange={handleContentChange}
+        style={{
+          backgroundColor: "transparent",
+          color: activeDesignSystem?.textPrimary,
+          fontFamily: activeDesignSystem?.secondaryFont,
+        }}
       />
-      {isSaving && <div className="text-sm text-gray-500">Saving...</div>}
     </div>
   );
 }

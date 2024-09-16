@@ -59,6 +59,16 @@ const DraggableItem: React.FC<DraggableItemProps> = ({
     }
   };
 
+  const handleDrop = (item: {
+    id: string;
+    isFolder: boolean;
+    parentId: string | null;
+  }) => {
+    if (item.id !== note.id && item.parentId !== note.id) {
+      onMoveNote(item.id, note.isFolder ? note.id : note.parentId);
+    }
+  };
+
   return (
     <div
       ref={ref}
