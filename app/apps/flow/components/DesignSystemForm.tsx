@@ -1,6 +1,7 @@
 // app/flow/components/DesignSystemForm.tsx
 
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { DesignSystem } from "@/types/DesignSystem";
 import ColorPicker from "./ColorPicker";
 
@@ -38,14 +39,17 @@ export default function DesignSystemForm({
   };
 
   return (
-    <form
+    <motion.form
       onSubmit={handleSubmit}
-      className="space-y-4 bg-white p-6 rounded-lg shadow"
+      className="space-y-4 bg-gray-800 p-6 rounded-lg shadow"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
     >
       <div>
         <label
           htmlFor="name"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-300"
         >
           Design System Name
         </label>
@@ -54,7 +58,7 @@ export default function DesignSystemForm({
           id="name"
           value={formData.name}
           onChange={(e) => handleChange("name", e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm p-2 text-white"
           required
         />
       </div>
@@ -68,7 +72,7 @@ export default function DesignSystemForm({
         ) {
           return (
             <div key={key}>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-300">
                 {key.charAt(0).toUpperCase() + key.slice(1)}
               </label>
               <ColorPicker
@@ -87,7 +91,7 @@ export default function DesignSystemForm({
       <div>
         <label
           htmlFor="primaryFont"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-300"
         >
           Primary Font
         </label>
@@ -96,7 +100,7 @@ export default function DesignSystemForm({
           id="primaryFont"
           value={formData.primaryFont}
           onChange={(e) => handleChange("primaryFont", e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm p-2 text-white"
           required
         />
       </div>
@@ -104,7 +108,7 @@ export default function DesignSystemForm({
       <div>
         <label
           htmlFor="secondaryFont"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-sm font-medium text-gray-300"
         >
           Secondary Font
         </label>
@@ -113,26 +117,30 @@ export default function DesignSystemForm({
           id="secondaryFont"
           value={formData.secondaryFont}
           onChange={(e) => handleChange("secondaryFont", e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm p-2 text-white"
           required
         />
       </div>
 
       <div className="flex justify-end space-x-2">
-        <button
+        <motion.button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="px-4 py-2 border border-gray-600 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           Cancel
-        </button>
-        <button
+        </motion.button>
+        <motion.button
           type="submit"
           className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           Create Design System
-        </button>
+        </motion.button>
       </div>
-    </form>
+    </motion.form>
   );
 }

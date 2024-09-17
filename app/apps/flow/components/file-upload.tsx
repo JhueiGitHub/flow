@@ -1,3 +1,5 @@
+// /app/flow/components/file-upload.tsx
+
 import { cn } from "@/lib/utils";
 import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -25,17 +27,21 @@ const secondaryVariant = {
   },
 };
 
-export const FileUpload = ({
+interface FileUploadProps {
+  onChange: (files: File[]) => void;
+  accept?: string;
+}
+
+export const FileUpload: React.FC<FileUploadProps> = ({
   onChange,
-}: {
-  onChange?: (files: File[]) => void;
+  accept = ".ttf,.otf,.woff,.woff2",
 }) => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: File[]) => {
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
-    onChange && onChange(newFiles);
+    onChange(newFiles);
   };
 
   const handleClick = () => {
@@ -45,6 +51,7 @@ export const FileUpload = ({
   const { getRootProps, isDragActive } = useDropzone({
     multiple: false,
     noClick: true,
+    accept: accept ? { "font/*": [accept] } : undefined,
     onDrop: handleFileChange,
     onDropRejected: (error) => {
       console.log(error);
@@ -62,6 +69,7 @@ export const FileUpload = ({
           ref={fileInputRef}
           id="file-upload-handle"
           type="file"
+          accept={accept}
           onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
           className="hidden"
         />
@@ -70,10 +78,10 @@ export const FileUpload = ({
         </div>
         <div className="flex flex-col items-center justify-center">
           <p className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-base">
-            Upload file
+            Upload font file
           </p>
           <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
-            Drag or drop your files here or click to upload
+            Drag and drop your font file here or click to upload
           </p>
           <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&

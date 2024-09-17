@@ -1,11 +1,13 @@
 // /app/flow/components/ActiveDesignSystem.tsx
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { motion } from "framer-motion";
 import { DesignSystem } from "@prisma/client";
 import ColorPicker from "./ColorPicker";
-import { FileUpload } from "./file-upload"; // Aceternity component
+import { FileUpload } from "./file-upload";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import debounce from "lodash/debounce";
 
 interface ActiveDesignSystemProps {
   system: DesignSystem;
@@ -20,18 +22,27 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleChange = useCallback((key: keyof DesignSystem, value: string) => {
-    setEditedSystem((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const handleChange = useCallback(
+    (key: keyof DesignSystem, value: string) => {
+      setEditedSystem((prev) => {
+        const updated = { ...prev, [key]: value };
+        onUpdate(updated);
+        return updated;
+      });
+    },
+    [onUpdate]
+  );
 
-  const handleUpdate = async () => {
+  const handleUpdate = useCallback(async () => {
     try {
       await onUpdate(editedSystem);
     } catch (error) {
       console.error("Error updating design system:", error);
       setUploadError("Failed to update design system. Please try again.");
     }
-  };
+  }, [editedSystem, onUpdate]);
+
+  // Remove the useEffect hook that was causing the infinite loop
 
   const handleFontUpload = useCallback(
     async (fontType: "primaryFont" | "secondaryFont", files: File[]) => {
@@ -78,10 +89,16 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
   );
 
   return (
-    <div className="">
-      <h3 className="text-xl font-semibold mb-4">{editedSystem.name}</h3>
+    <motion.div
+      className="bg-gray-800 p-6 rounded-lg shadow"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.2 }}
+    >
+      <h3 className="text-xl font-semibold mb-4 text-white">
+        {editedSystem.name}
+      </h3>
 
-      {/* Color pickers displayed horizontally */}
       <div className="flex flex-wrap gap-4 mb-6">
         {Object.entries(editedSystem).map(([key, value]) => {
           if (
@@ -94,14 +111,14 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
           ) {
             return (
               <div key={key} className="flex flex-col items-center">
-                <label className="text-sm font-medium text-gray-700 mb-1">
+                <label className="text-sm font-medium text-gray-300 mb-1">
                   {key.charAt(0).toUpperCase() + key.slice(1)}
                 </label>
                 <ColorPicker
                   color={value}
-                  onChange={(color) =>
-                    handleChange(key as keyof DesignSystem, color)
-                  }
+                  onChange={(color) => {
+                    handleChange(key as keyof DesignSystem, color);
+                  }}
                   label={key}
                 />
               </div>
@@ -111,11 +128,10 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
         })}
       </div>
 
-      {/* Font upload section with Aceternity FileUpload */}
       <div className="space-y-4 mb-6">
         {["primaryFont", "secondaryFont"].map((fontType) => (
           <div key={fontType} className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700 w-32">
+            <label className="text-sm font-medium text-gray-300 w-32">
               {fontType.charAt(0).toUpperCase() + fontType.slice(1)}
             </label>
             <FileUpload
@@ -126,16 +142,15 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
                 )
               }
             />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-400">
               {editedSystem[fontType as "primaryFont" | "secondaryFont"]}
             </span>
           </div>
         ))}
       </div>
 
-      {/* Preview section remains unchanged */}
       <div className="mb-6">
-        <h4 className="text-lg font-semibold mb-2">Preview</h4>
+        <h4 className="text-lg font-semibold mb-2 text-white">Preview</h4>
         <div
           className="p-4 rounded"
           style={{ backgroundColor: editedSystem.backgroundColor }}
@@ -173,16 +188,18 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
         </div>
       </div>
 
-      <button
+      <motion.button
         onClick={handleUpdate}
         className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
         Update Design System
-      </button>
+      </motion.button>
 
       {isUploading && <p className="text-blue-500 mt-2">Uploading font...</p>}
       {uploadError && <p className="text-red-500 mt-2">{uploadError}</p>}
-    </div>
+    </motion.div>
   );
 };
 

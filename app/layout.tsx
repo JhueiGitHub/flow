@@ -11,6 +11,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { DesignSystemProvider } from "@/contexts/DesignSystemContext";
 import "./globals.css";
 import type { Metadata } from "next";
+import { FontLoader } from "@/app/apps/flow/components/FontLoader";
 
 export const metadata: Metadata = {
   title: "Orion OS",
@@ -26,7 +27,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
         <body>
-          <DesignSystemProvider>{children}</DesignSystemProvider>
+          <DesignSystemProvider>
+            <FontLoader />
+            {children}
+          </DesignSystemProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -2,19 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DesignSystem } from "@prisma/client";
-import DesignSystemList from "./DesignSystemList";
-import DesignSystemForm from "./DesignSystemForm";
-import ActiveDesignSystem from "./ActiveDesignSystem";
 import { useDesignSystem } from "@/contexts/DesignSystemContext";
+import FlowAppLayout from "./FlowAppLayout";
 
 export default function DesignSystemManager() {
   const [designSystems, setDesignSystems] = useState<DesignSystem[]>([]);
   const { activeDesignSystem, setActiveDesignSystem } = useDesignSystem();
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Preserved: Fetching design systems
   const fetchDesignSystems = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -37,7 +33,6 @@ export default function DesignSystemManager() {
     fetchDesignSystems();
   }, [fetchDesignSystems]);
 
-  // Preserved: Creating a new design system
   const handleCreateDesignSystem = async (newSystem: Partial<DesignSystem>) => {
     try {
       const response = await fetch("/api/design-systems", {
@@ -49,15 +44,12 @@ export default function DesignSystemManager() {
         throw new Error("Failed to create design system");
       }
       await fetchDesignSystems();
-      setShowCreateForm(false);
     } catch (error) {
       console.error("Error creating design system:", error);
       setError("Failed to create design system. Please try again.");
     }
   };
 
-  // Updated: Activating a design system
-  // Changed the URL to use the new /activate endpoint
   const handleActivateDesignSystem = useCallback(
     async (system: DesignSystem) => {
       try {
@@ -80,7 +72,6 @@ export default function DesignSystemManager() {
     [setActiveDesignSystem, fetchDesignSystems]
   );
 
-  // Preserved: Exporting a design system
   const handleExportDesignSystem = useCallback(async (id: string) => {
     try {
       const response = await fetch(`/api/design-systems/${id}/export`);
@@ -102,7 +93,6 @@ export default function DesignSystemManager() {
     }
   }, []);
 
-  // Preserved: Deleting a design system
   const handleDeleteDesignSystem = useCallback(
     async (id: string) => {
       try {
@@ -124,7 +114,6 @@ export default function DesignSystemManager() {
     [activeDesignSystem, fetchDesignSystems, setActiveDesignSystem]
   );
 
-  // Preserved: Updating a design system
   const handleUpdateDesignSystem = async (updatedSystem: DesignSystem) => {
     try {
       const response = await fetch(`/api/design-systems/${updatedSystem.id}`, {
@@ -148,52 +137,14 @@ export default function DesignSystemManager() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Your Design Systems</h2>
-        <DesignSystemList
-          systems={designSystems}
-          onDelete={handleDeleteDesignSystem}
-          onActivate={handleActivateDesignSystem}
-          onExport={handleExportDesignSystem}
-          activeSystemId={activeDesignSystem?.id}
-        />
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Create New Design System
-        </button>
-      </div>
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">
-          {showCreateForm ? "Create New Design System" : "Active Design System"}
-        </h2>
-        {showCreateForm ? (
-          <DesignSystemForm
-            onSubmit={handleCreateDesignSystem}
-            onCancel={() => setShowCreateForm(false)}
-          />
-        ) : activeDesignSystem ? (
-          <ActiveDesignSystem
-            system={activeDesignSystem}
-            onUpdate={handleUpdateDesignSystem}
-          />
-        ) : (
-          <p>
-            No active design system. Select one from the list or create a new
-            one.
-          </p>
-        )}
-      </div>
-      {error && (
-        <div
-          className="col-span-2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded"
-          role="alert"
-        >
-          <p>{error}</p>
-        </div>
-      )}
-    </div>
+    <FlowAppLayout
+      designSystems={designSystems}
+      activeDesignSystem={activeDesignSystem}
+      onCreateDesignSystem={handleCreateDesignSystem}
+      onUpdateDesignSystem={handleUpdateDesignSystem}
+      onActivateDesignSystem={handleActivateDesignSystem}
+      onDeleteDesignSystem={handleDeleteDesignSystem}
+      onExportDesignSystem={handleExportDesignSystem}
+    />
   );
 }
