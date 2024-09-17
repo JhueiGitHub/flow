@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { DesignSystem } from "@prisma/client";
 import ColorPicker from "./ColorPicker";
 import { FileUpload } from "./file-upload";
+import { UploadButton } from "@uploadthing/react";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import debounce from "lodash/debounce";
 
 interface ActiveDesignSystemProps {
@@ -21,15 +23,26 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
   const [isUploading, setIsUploading] = useState(false);
 
   const handleChange = useCallback(
-    debounce((key: keyof DesignSystem, value: string) => {
+    (key: keyof DesignSystem, value: string) => {
       setEditedSystem((prev) => {
         const updated = { ...prev, [key]: value };
         onUpdate(updated);
         return updated;
       });
-    }, 300),
+    },
     [onUpdate]
   );
+
+  const handleUpdate = useCallback(async () => {
+    try {
+      await onUpdate(editedSystem);
+    } catch (error) {
+      console.error("Error updating design system:", error);
+      setUploadError("Failed to update design system. Please try again.");
+    }
+  }, [editedSystem, onUpdate]);
+
+  // Remove the useEffect hook that was causing the infinite loop
 
   const handleFontUpload = useCallback(
     async (fontType: "primaryFont" | "secondaryFont", files: File[]) => {
@@ -74,24 +87,6 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
     },
     [editedSystem, onUpdate]
   );
-
-  useEffect(() => {
-    // Load custom fonts
-    const loadFont = async (url: string, fontFamily: string) => {
-      if (url) {
-        try {
-          const font = new FontFace(fontFamily, `url(${url})`);
-          await font.load();
-          document.fonts.add(font);
-        } catch (error) {
-          console.error(`Error loading font ${fontFamily}:`, error);
-        }
-      }
-    };
-
-    loadFont(editedSystem.primaryFontUrl || "", "CustomPrimaryFont");
-    loadFont(editedSystem.secondaryFontUrl || "", "CustomSecondaryFont");
-  }, [editedSystem.primaryFontUrl, editedSystem.secondaryFontUrl]);
 
   return (
     <motion.div
@@ -163,7 +158,7 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
           <h5
             style={{
               color: editedSystem.primaryColor,
-              fontFamily: `'CustomPrimaryFont', ${editedSystem.primaryFont}, sans-serif`,
+              fontFamily: "CustomPrimaryFont, var(--primary-font), sans-serif",
             }}
             className="text-xl mb-2"
           >
@@ -172,7 +167,8 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
           <p
             style={{
               color: editedSystem.textPrimary,
-              fontFamily: `'CustomSecondaryFont', ${editedSystem.secondaryFont}, sans-serif`,
+              fontFamily:
+                "CustomSecondaryFont, var(--secondary-font), sans-serif",
             }}
           >
             This is a sample text in the primary text color and secondary font.
@@ -192,6 +188,15 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
           </div>
         </div>
       </div>
+
+      <motion.button
+        onClick={handleUpdate}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Update Design System
+      </motion.button>
 
       {isUploading && <p className="text-blue-500 mt-2">Uploading font...</p>}
       {uploadError && <p className="text-red-500 mt-2">{uploadError}</p>}
