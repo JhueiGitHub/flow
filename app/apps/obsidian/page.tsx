@@ -1,5 +1,7 @@
 // ObsidianApp.tsx (or your main Obsidian component)
 
+"use client";
+
 import React, { useState, useEffect, useCallback } from "react";
 import Sidebar from "./components/sidebar";
 import Editor from "./components/editor";
