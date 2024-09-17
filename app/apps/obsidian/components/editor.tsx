@@ -1,4 +1,4 @@
-// Editor.tsx
+// app/apps/obsidian/components/Editor.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Note } from "@prisma/client";
@@ -45,14 +45,21 @@ const Editor: React.FC<EditorProps> = ({ note, onUpdateNote, padding }) => {
         flexDirection: "column",
       }}
     >
-      <h1 style={{ color: activeDesignSystem?.accentColor }}>{note.title}</h1>
+      <h1
+        style={{
+          color: activeDesignSystem?.accentColor,
+          fontFamily: "CustomPrimaryFont, var(--primary-font), sans-serif",
+        }}
+      >
+        {note.title}
+      </h1>
       <textarea
         value={content}
         onChange={handleContentChange}
         style={{
           backgroundColor: "transparent",
           color: activeDesignSystem?.textPrimary,
-          fontFamily: activeDesignSystem?.secondaryFont,
+          fontFamily: "CustomSecondaryFont, var(--secondary-font), sans-serif",
           flex: 1,
           border: "none",
           outline: "none",

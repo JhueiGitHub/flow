@@ -12,7 +12,9 @@ export interface DesignSystem {
   accentColor: string;
   textAccentColor: string;
   primaryFont: string;
+  primaryFontUrl: string | null; // Add this line
   secondaryFont: string;
+  secondaryFontUrl: string | null; // Add this line
   editorBackground: string;
   isActive: boolean;
   profileId: string;

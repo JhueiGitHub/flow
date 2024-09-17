@@ -1,4 +1,4 @@
-// /app/apps/flow/components/FontLoader.tsx
+// app/apps/flow/components/FontLoader.tsx
 
 "use client";
 
@@ -9,28 +9,29 @@ export const FontLoader: React.FC = () => {
   const { activeDesignSystem } = useDesignSystem();
 
   useEffect(() => {
-    if (activeDesignSystem?.primaryFontUrl) {
-      const font = new FontFace(
-        "CustomPrimaryFont",
-        `url(${activeDesignSystem.primaryFontUrl})`
-      );
-      font.load().then((loadedFont) => {
-        document.fonts.add(loadedFont);
-        document.body.style.setProperty("--primary-font", "CustomPrimaryFont");
-      });
-    }
-    if (activeDesignSystem?.secondaryFontUrl) {
-      const font = new FontFace(
-        "CustomSecondaryFont",
-        `url(${activeDesignSystem.secondaryFontUrl})`
-      );
-      font.load().then((loadedFont) => {
+    console.log("Active Design System:", activeDesignSystem); // Log for debugging
+
+    const loadFont = async (fontUrl: string, fontFamily: string) => {
+      try {
+        const font = new FontFace(fontFamily, `url(${fontUrl})`);
+        const loadedFont = await font.load();
         document.fonts.add(loadedFont);
         document.body.style.setProperty(
-          "--secondary-font",
-          "CustomSecondaryFont"
+          `--${fontFamily.toLowerCase()}`,
+          fontFamily
         );
-      });
+        console.log(`${fontFamily} loaded successfully`);
+      } catch (error) {
+        console.error(`Error loading ${fontFamily}:`, error);
+      }
+    };
+
+    if (activeDesignSystem?.primaryFontUrl) {
+      loadFont(activeDesignSystem.primaryFontUrl, "CustomPrimaryFont");
+    }
+
+    if (activeDesignSystem?.secondaryFontUrl) {
+      loadFont(activeDesignSystem.secondaryFontUrl, "CustomSecondaryFont");
     }
   }, [activeDesignSystem]);
 
