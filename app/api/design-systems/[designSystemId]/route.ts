@@ -1,4 +1,5 @@
-// app/api/design-systems/[designSystemId]/route.ts
+// /root/app/api/design-systems/[designSystemId]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { currentProfile } from "@/lib/current-profile";

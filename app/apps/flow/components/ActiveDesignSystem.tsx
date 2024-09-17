@@ -1,54 +1,100 @@
-// app/flow/components/ActiveDesignSystem.tsx
+// /app/flow/components/ActiveDesignSystem.tsx
 
-import React, { useState } from "react";
-import { DesignSystem } from "@/types/DesignSystem";
+import React, { useState, useCallback } from "react";
+import { DesignSystem } from "@prisma/client";
 import ColorPicker from "./ColorPicker";
+import { FileUpload } from "./file-upload"; // Aceternity component
+import { UploadButton } from "@uploadthing/react";
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 interface ActiveDesignSystemProps {
   system: DesignSystem;
+  onUpdate: (updatedSystem: DesignSystem) => Promise<void>;
 }
 
-const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({ system }) => {
+const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({
+  system,
+  onUpdate,
+}) => {
   const [editedSystem, setEditedSystem] = useState(system);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleChange = useCallback((key: keyof DesignSystem, value: string) => {
+    setEditedSystem((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const handleUpdate = async () => {
     try {
-      const response = await fetch(`/api/design-systems/${system.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editedSystem),
-      });
-      if (response.ok) {
-        // TODO: Update the active design system in the context
-        console.log("Design system updated successfully");
-      }
+      await onUpdate(editedSystem);
     } catch (error) {
       console.error("Error updating design system:", error);
+      setUploadError("Failed to update design system. Please try again.");
     }
   };
 
-  const handleChange = (key: keyof DesignSystem, value: string) => {
-    setEditedSystem((prev) => ({ ...prev, [key]: value }));
-  };
+  const handleFontUpload = useCallback(
+    async (fontType: "primaryFont" | "secondaryFont", files: File[]) => {
+      if (files.length === 0) {
+        setUploadError("No file was uploaded.");
+        return;
+      }
+
+      setIsUploading(true);
+      setUploadError(null);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", files[0]);
+        formData.append("fontType", fontType);
+
+        const response = await fetch("/api/upload-font", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to upload font");
+        }
+
+        const { fileUrl, fileName } = await response.json();
+
+        const updatedSystem = {
+          ...editedSystem,
+          [fontType]: fileName,
+          [`${fontType}Url`]: fileUrl,
+        };
+
+        setEditedSystem(updatedSystem);
+        await onUpdate(updatedSystem);
+      } catch (error) {
+        console.error("Error uploading font:", error);
+        setUploadError("Failed to upload font. Please try again.");
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [editedSystem, onUpdate]
+  );
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow space-y-4">
-      <h3 className="text-xl font-semibold">{editedSystem.name}</h3>
+    <div className="">
+      <h3 className="text-xl font-semibold mb-4">{editedSystem.name}</h3>
 
-      {Object.entries(editedSystem).map(([key, value]) => {
-        if (
-          typeof value === "string" &&
-          key !== "id" &&
-          key !== "name" &&
-          key !== "profileId"
-        ) {
+      {/* Color pickers displayed horizontally */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        {Object.entries(editedSystem).map(([key, value]) => {
           if (
-            key.toLowerCase().includes("color") ||
-            key.toLowerCase().includes("background")
+            typeof value === "string" &&
+            key !== "id" &&
+            key !== "name" &&
+            key !== "profileId" &&
+            !key.toLowerCase().includes("font") &&
+            !key.toLowerCase().includes("url")
           ) {
             return (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700">
+              <div key={key} className="flex flex-col items-center">
+                <label className="text-sm font-medium text-gray-700 mb-1">
                   {key.charAt(0).toUpperCase() + key.slice(1)}
                 </label>
                 <ColorPicker
@@ -60,29 +106,35 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({ system }) => {
                 />
               </div>
             );
-          } else if (key.toLowerCase().includes("font")) {
-            return (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700">
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </label>
-                <input
-                  type="text"
-                  value={value}
-                  onChange={(e) =>
-                    handleChange(key as keyof DesignSystem, e.target.value)
-                  }
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
-            );
           }
-        }
-        return null;
-      })}
+          return null;
+        })}
+      </div>
 
-      {/* Preview section */}
-      <div className="mt-8">
+      {/* Font upload section with Aceternity FileUpload */}
+      <div className="space-y-4 mb-6">
+        {["primaryFont", "secondaryFont"].map((fontType) => (
+          <div key={fontType} className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700 w-32">
+              {fontType.charAt(0).toUpperCase() + fontType.slice(1)}
+            </label>
+            <FileUpload
+              onChange={(files) =>
+                handleFontUpload(
+                  fontType as "primaryFont" | "secondaryFont",
+                  files
+                )
+              }
+            />
+            <span className="text-sm text-gray-600">
+              {editedSystem[fontType as "primaryFont" | "secondaryFont"]}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Preview section remains unchanged */}
+      <div className="mb-6">
         <h4 className="text-lg font-semibold mb-2">Preview</h4>
         <div
           className="p-4 rounded"
@@ -123,10 +175,13 @@ const ActiveDesignSystem: React.FC<ActiveDesignSystemProps> = ({ system }) => {
 
       <button
         onClick={handleUpdate}
-        className="mt-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
       >
         Update Design System
       </button>
+
+      {isUploading && <p className="text-blue-500 mt-2">Uploading font...</p>}
+      {uploadError && <p className="text-red-500 mt-2">{uploadError}</p>}
     </div>
   );
 };

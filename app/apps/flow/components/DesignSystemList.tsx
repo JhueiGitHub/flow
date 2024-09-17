@@ -16,6 +16,7 @@ interface DesignSystemListProps {
   onDelete: (id: string) => Promise<void>;
   onActivate: (system: DesignSystem) => Promise<void>;
   activeSystemId: string | undefined;
+  onExport: (id: string) => Promise<void>;
 }
 
 const DesignSystemList: React.FC<DesignSystemListProps> = ({

@@ -7,7 +7,9 @@ import { DesignSystem } from "@prisma/client";
 
 interface DesignSystemContextType {
   activeDesignSystem: DesignSystem | null;
-  setActiveDesignSystem: (designSystem: DesignSystem) => void;
+  setActiveDesignSystem: React.Dispatch<
+    React.SetStateAction<DesignSystem | null>
+  >;
 }
 
 const DesignSystemContext = createContext<DesignSystemContextType>({
