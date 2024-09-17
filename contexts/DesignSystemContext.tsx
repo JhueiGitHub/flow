@@ -1,9 +1,9 @@
-// contexts/DesignSystemContext.tsx
+// DesignSystemContext.tsx
 
 "use client";
 
 import React, { createContext, useState, useEffect, useContext } from "react";
-import { DesignSystem } from "@prisma/client";
+import { DesignSystem } from "@/types/DesignSystem"; // Import the DesignSystem type
 
 interface DesignSystemContextType {
   activeDesignSystem: DesignSystem | null;
@@ -28,7 +28,7 @@ export const DesignSystemProvider: React.FC<{ children: React.ReactNode }> = ({
     const fetchActiveDesignSystem = async () => {
       const response = await fetch("/api/active-design-system");
       if (response.ok) {
-        const data = await response.json();
+        const data: DesignSystem = await response.json();
         setActiveDesignSystem(data);
       }
     };

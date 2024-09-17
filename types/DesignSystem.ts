@@ -18,4 +18,5 @@ export interface DesignSystem {
   profileId: string;
   createdAt: Date;
   updatedAt: Date;
+  dir?: "ltr" | "rtl"; // Add this line to include the dir property
 }

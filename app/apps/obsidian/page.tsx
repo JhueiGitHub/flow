@@ -1,29 +1,18 @@
-// /app/obsidian/page.tsx
-
-"use client";
+// ObsidianApp.tsx (or your main Obsidian component)
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Note, DesignSystem } from "@prisma/client";
 import Sidebar from "./components/sidebar";
 import Editor from "./components/editor";
-import StatusIndicator from "./components/StatusIndicator";
+import { Note } from "@prisma/client";
 import { useDesignSystem } from "@/contexts/DesignSystemContext";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-export default function ObsidianPage() {
+
+const ObsidianApp: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const { activeDesignSystem, setActiveDesignSystem } = useDesignSystem();
-  const [designSystems, setDesignSystems] = useState<DesignSystem[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const { activeDesignSystem } = useDesignSystem();
 
-  useEffect(() => {
-    fetchNotes();
-    fetchDesignSystems();
-    fetchActiveDesignSystem();
-  }, []);
-
-  const fetchNotes = async () => {
+  // Fetch notes from API
+  const fetchNotes = useCallback(async () => {
     try {
       const response = await fetch("/api/notes");
       if (response.ok) {
@@ -38,31 +27,11 @@ export default function ObsidianPage() {
     } catch (error) {
       console.error("Error fetching notes:", error);
     }
-  };
+  }, [selectedNote]);
 
-  const fetchDesignSystems = async () => {
-    try {
-      const response = await fetch("/api/design-systems");
-      if (response.ok) {
-        const fetchedSystems = await response.json();
-        setDesignSystems(fetchedSystems);
-      }
-    } catch (error) {
-      console.error("Error fetching design systems:", error);
-    }
-  };
-
-  const fetchActiveDesignSystem = async () => {
-    try {
-      const response = await fetch("/api/active-design-system");
-      if (response.ok) {
-        const activeSystem = await response.json();
-        setActiveDesignSystem(activeSystem);
-      }
-    } catch (error) {
-      console.error("Error fetching active design system:", error);
-    }
-  };
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
   const handleUpdateNote = useCallback(async (updatedNote: Note) => {
     try {
@@ -85,89 +54,65 @@ export default function ObsidianPage() {
     }
   }, []);
 
-  const handleSelectDesignSystem = async (designSystemId: string) => {
-    try {
-      const response = await fetch("/api/active-design-system", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ designSystemId }),
-      });
-      if (response.ok) {
-        const updatedSystem = await response.json();
-        setActiveDesignSystem(updatedSystem);
+  const handleMoveNote = useCallback(
+    async (noteId: string, newParentId: string | null) => {
+      try {
+        const response = await fetch(`/api/notes/${noteId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parentId: newParentId }),
+        });
+        if (response.ok) {
+          fetchNotes();
+        } else {
+          console.error("Error moving note:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error moving note:", error);
       }
-    } catch (error) {
-      console.error("Error setting active design system:", error);
-    }
-  };
+    },
+    [fetchNotes]
+  );
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div
-        style={{
-          display: "flex",
-          height: "100vh",
-          backgroundColor: activeDesignSystem?.backgroundColor,
-        }}
-      >
-        <Sidebar
-          notes={notes}
-          onSelectNote={setSelectedNote}
-          onUpdateNotes={fetchNotes}
-          width="228px"
-          padding="18px"
-        />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <div
+      style={{
+        display: "flex",
+        height: "100vh",
+        backgroundColor: activeDesignSystem?.backgroundColor,
+      }}
+    >
+      <Sidebar
+        notes={notes}
+        onSelectNote={setSelectedNote}
+        onUpdateNotes={fetchNotes}
+        onMoveNote={handleMoveNote}
+        width="228px"
+        padding="18px"
+      />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {selectedNote ? (
+          <Editor
+            note={selectedNote}
+            onUpdateNote={handleUpdateNote}
+            padding="30px"
+          />
+        ) : (
           <div
             style={{
-              padding: "10px",
-              borderBottom: `1px solid ${activeDesignSystem?.overlayBorder}`,
+              flex: 1,
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "center",
               alignItems: "center",
+              color: activeDesignSystem?.textPrimary,
             }}
           >
-            <select
-              value={activeDesignSystem?.id || ""}
-              onChange={(e) => handleSelectDesignSystem(e.target.value)}
-              style={{
-                backgroundColor: activeDesignSystem?.overlayBackground,
-                color: activeDesignSystem?.textPrimary,
-                border: `1px solid ${activeDesignSystem?.overlayBorder}`,
-                padding: "5px",
-                borderRadius: "4px",
-              }}
-            >
-              {designSystems.map((system) => (
-                <option key={system.id} value={system.id}>
-                  {system.name}
-                </option>
-              ))}
-            </select>
-            <StatusIndicator isSaving={isSaving} />
+            Select a note to edit
           </div>
-          {selectedNote ? (
-            <Editor
-              note={selectedNote}
-              onUpdateNote={handleUpdateNote}
-              padding="30px"
-              setIsSaving={setIsSaving}
-            />
-          ) : (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                color: activeDesignSystem?.textPrimary,
-              }}
-            >
-              Select a note to edit
-            </div>
-          )}
-        </div>
+        )}
       </div>
-    </DndProvider>
+    </div>
   );
-}
+};
+
+export default ObsidianApp;

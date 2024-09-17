@@ -1,4 +1,4 @@
-// /app/obsidian/components/ContextMenu.tsx
+// ContextMenu.tsx
 
 import React from "react";
 import { Note } from "@prisma/client";

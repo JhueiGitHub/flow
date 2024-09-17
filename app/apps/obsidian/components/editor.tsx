@@ -1,24 +1,17 @@
-// /app/obsidian/components/Editor.tsx
+// Editor.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Note } from "@prisma/client";
 import { useDesignSystem } from "@/contexts/DesignSystemContext";
-import styles from "../styles/obsidian.module.css";
 import { debounce } from "@/app/utils/debounce";
 
 interface EditorProps {
   note: Note;
   onUpdateNote: (updatedNote: Note) => void;
   padding: string;
-  setIsSaving: (isSaving: boolean) => void;
 }
 
-export default function Editor({
-  note,
-  onUpdateNote,
-  padding,
-  setIsSaving,
-}: EditorProps) {
+const Editor: React.FC<EditorProps> = ({ note, onUpdateNote, padding }) => {
   const [content, setContent] = useState(note.content || "");
   const { activeDesignSystem } = useDesignSystem();
 
@@ -28,11 +21,9 @@ export default function Editor({
 
   const debouncedUpdateNote = useCallback(
     debounce((updatedContent: string) => {
-      setIsSaving(true);
       onUpdateNote({ ...note, content: updatedContent });
-      setTimeout(() => setIsSaving(false), 1000);
     }, 1000),
-    [note, onUpdateNote, setIsSaving]
+    [note, onUpdateNote]
   );
 
   const handleContentChange = useCallback(
@@ -46,8 +37,13 @@ export default function Editor({
 
   return (
     <div
-      className={styles.editor}
-      style={{ padding, backgroundColor: activeDesignSystem?.editorBackground }}
+      style={{
+        padding,
+        backgroundColor: activeDesignSystem?.editorBackground,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
     >
       <h1 style={{ color: activeDesignSystem?.accentColor }}>{note.title}</h1>
       <textarea
@@ -57,8 +53,7 @@ export default function Editor({
           backgroundColor: "transparent",
           color: activeDesignSystem?.textPrimary,
           fontFamily: activeDesignSystem?.secondaryFont,
-          width: "100%",
-          height: "calc(100% - 40px)",
+          flex: 1,
           border: "none",
           outline: "none",
           resize: "none",
@@ -66,4 +61,6 @@ export default function Editor({
       />
     </div>
   );
-}
+};
+
+export default Editor;
